@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volley Score & Stats - Projet EPS</title>
+    <style>
+        /* Styles Généraux */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #eef2f7;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #004d99;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Panneaux principaux */
+        #config-section, #mode-selector, #court-section, #stats-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        /* Boutons de sélection */
+        .mode-button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .mode-button.active, .formation-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.5);
+        }
+
+        /* Configuration des Équipes */
+        .team-config {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 15px;
+        }
+        
+        /* Score Display (Centrage corrigé) */
+        #match-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            height: 150px; 
+        }
+        
+        .team-info {
+            display: flex;
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-between;
+            width: 45%; 
+            height: 100%; 
+        }
+
+        .team-name {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        #score-A, #score-B {
+            font-size: 4em;
+            font-weight: bold;
+            color: #ffcc00; 
+            background-color: #000; 
+            width: 100%; 
+            padding: 15px 0;
+            text-align: center;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1; 
+        }
+
+        /* Listes de joueurs */
+        .current-player-list {
+            list-style: none;
+            padding: 5px 0 0 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .current-player-list li {
+            margin: 0 5px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .level-N1 { background-color: #28a745; color: white; } 
+        .level-N2 { background-color: #ffc107; color: #333; } 
+        .level-N3 { background-color: #dc3545; color: white; } 
+
+        /* Boutons d'Action / Score */
+        .score-col {
+            width: 48%;
+            text-align: center;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .action-button {
+            display: block;
+            width: 90%;
+            padding: 10px;
+            margin: 8px auto;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            text-align: left;
+        }
+        
+        .btn-rpa-smash { background-color: #28a745; color: white; } 
+        .btn-rpa-place { background-color: #17a2b8; color: white; }
+        .btn-relance { background-color: #ffc107; color: #333; }
+        .btn-service { background-color: #007bff; color: white; }
+        .btn-faute { background-color: #dc3545; color: white; }
+        .btn-simple-score { background-color: #5cb85c; color: white; font-size: 1.2em; }
+
+        /* --- Styles des Terrains --- */
+        #court-display {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin-top: 15px;
+        }
+
+        .team-court-container {
+            width: 48%;
+            position: relative;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #f7f7f7;
+        }
+
+        .formation-selector-team {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        
+        .court-diagram {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            width: 100%;
+            height: 250px; 
+            border: 3px solid #000;
+            margin: 10px auto;
+            position: relative;
+            box-sizing: border-box;
+        }
+        
+        .court-position {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #999;
+            font-weight: bold;
+            font-size: 0.8em;
+            background-color: #e0f7fa;
+            z-index: 1;
+            padding: 3px;
+        }
+        
+        .court-position:nth-child(1), .court-position:nth-child(2), .court-position:nth-child(3) {
+            background-color: #c8e6c9; 
+        }
+
+        .player-service {
+             border: 2px solid #000; 
+             box-shadow: 0 0 5px orange;
+        }
+
+        /* --- Styles Statistiques et Feedback --- */
+        #stats-section { 
+            display: none; 
+        }
+        .stats-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .stats-table th, .stats-table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        
+        /* Styles spécifiques pour les totaux des phases */
+        .phase-header { background-color: #e0e0e0; font-weight: bold; }
+        .total-row td { background-color: #c0c0c0; font-weight: bold; }
+
+        /* Styles Maîtrise */
+        #legend-table td { padding: 8px 12px; width: 20%; }
+        #legend-table .legend-header { background-color: #333; color: white; font-weight: normal; width: 20%; }
+        .ratio-cell { font-size: 0.9em; font-weight: bold; }
+        
+        /* COULEURS SELON VOS CRITÈRES (10%, 20%, 30%) */
+        .tres-satisfaisante { 
+            background-color: #1b5e20; /* Vert foncé (>30%) */
+            color: white; 
+            font-weight: bold; 
+        } 
+        .satisfaisante { 
+            background-color: #4caf50; /* Vert clair (20%-30%) */
+            color: white; 
+            font-weight: bold; 
+        } 
+        .fragile { 
+            background-color: #ffeb3b; /* Jaune (10%-20%) */
+            color: #333; 
+            font-weight: bold; 
+        } 
+        .insuffisante { 
+            background-color: #f44336; /* Rouge (<10%) */
+            color: white; 
+            font-weight: bold; 
+        } 
+        
+        /* ========================================= */
+        /* === RÈGLES D'IMPRESSION (OPTIMISATION A4) === */
+        /* ========================================= */
+        @media print {
+            /* 1. Optimisation de la taille et suppression des marges */
+            body {
+                font-size: 80%; /* Réduire la taille globale pour tout faire tenir */
+                padding: 0;
+            }
+
+            /* 2. Cacher les éléments non pertinents pour le rapport */
+            .no-print, 
+            .action-button, 
+            #score-buttons, 
+            #simple-counter,
+            p.print-button-container { 
+                display: none !important;
+            }
+
+            /* 3. Forcer un saut de page après la section Match/Rotation */
+            #court-section {
+                page-break-after: always; /* Force la section Stats à aller sur la page suivante */
+                box-shadow: none; 
+                margin: 0;
+                padding: 10px; 
+            }
+
+            /* 4. Forcer l'impression des couleurs de fond */
+            .tres-satisfaisante, .satisfaisante, .fragile, .insuffisante, 
+            .phase-header, .total-row td, #match-display, #score-A, #score-B {
+                -webkit-print-color-adjust: exact; 
+                color-adjust: exact; 
+            }
+            
+            /* 5. Assurer la couleur du texte sur les fonds colorés */
+            .tres-satisfaisante, .satisfaisante, .insuffisante, #match-display, #score-A, #score-B {
+                color: white !important; 
+            }
+            
+            .fragile {
+                color: #333 !important;
+            }
+            
+            header, #match-display {
+                box-shadow: none; 
+                margin: 0;
+                padding: 10px; 
+            }
+            
+            #stats-section {
+                box-shadow: none;
+                margin: 0;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏐 Volley Score & Stats - Projet EPS</h1>
+        <p>Gestion des équipes, rotations et indicateurs d'efficacité.</p>
+    </header>
+
+    <div id="config-section" class="no-print">
+        <h2>👥 Configuration des Équipes (6 joueurs par équipe)</h2>
+        <p>Entrez les prénoms des élèves (N1: Expert, N3: Débutant).</p>
+        <div class="team-config">
+            <div id="team-A-config">
+                <h3>Équipe A</h3>
+                <div class="level-input"><label>N3:</label> <input type="text" id="a-n3-1" value="A_N3_1" onchange="updateTeams()"> <input type="text" id="a-n3-2" value="A_N3_2" onchange="updateTeams()"></div>
+                <div class="level-input"><label>N2:</label> <input type="text" id="a-n2-1" value="A_N2_1" onchange="updateTeams()"> <input type="text" id="a-n2-2" value="A_N2_2" onchange="updateTeams()"></div>
+                <div class="level-input"><label>N1:</label> <input type="text" id="a-n1-1" value="A_N1_1" onchange="updateTeams()"> <input type="text" id="a-n1-2" value="A_N1_2" onchange="updateTeams()"></div>
+            </div>
+            <div id="team-B-config">
+                <h3>Équipe B</h3>
+                <div class="level-input"><label>N3:</label> <input type="text" id="b-n3-1" value="B_N3_1" onchange="updateTeams()"> <input type="text" id="b-n3-2" value="B_N3_2" onchange="updateTeams()"></div>
+                <div class="level-input"><label>N2:</label> <input type="text" id="b-n2-1" value="B_N2_1" onchange="updateTeams()"> <input type="text" id="b-n2-2" value="B_N2_2" onchange="updateTeams()"></div>
+                <div class="level-input"><label>N1:</label> <input type="text" id="b-n1-1" value="B_N1_1" onchange="updateTeams()"> <input type="text" id="b-n1-2" value="B_N1_2" onchange="updateTeams()"></div>
+            </div>
+        </div>
+        <button class="action-button btn-service" onclick="resetGame()">🚨 Réinitialiser le Score et les Rotations</button>
+    </div>
+
+    <div id="mode-selector" class="no-print">
+        <h2>🕹️ Mode de Jeu</h2>
+        <button id="btn-mode-stats" class="mode-button active" onclick="setMode('stats')">Mode AVEC Observation (Stats)</button>
+        <button id="btn-mode-simple" class="mode-button" onclick="setMode('simple')">Mode SANS Observation (Simple)</button>
+    </div>
+
+    <div id="match-display">
+        <div class="team-info">
+            <div class="team-name">Équipe A</div>
+            <div id="score-A">0</div>
+            <div id="current-players-A"></div>
+        </div>
+        <div class="separator">-</div>
+        <div class="team-info">
+            <div class="team-name">Équipe B</div>
+            <div id="score-B">0</div>
+            <div id="current-players-B"></div>
+        </div>
+    </div>
+    
+    <div id="court-section">
+        <h2>🔄 Rotation et Positions sur le Terrain (4v4)</h2>
+        <div id="court-display">
+            </div>
+    </div>
+    
+    <div id="score-buttons" class="no-print">
+        <div class="score-col">
+            <h4>Points Équipe A (Cliquez pour marquer)</h4>
+            <button class="action-button btn-rpa-smash" onclick="addPoint('A', 'rpaSmash')">Point A - R-P-A (Smash)</button>
+            <button class="action-button btn-rpa-place" onclick="addPoint('A', 'rpaPlace')">Point A - R-P-A (Balle placée)</button>
+            <button class="action-button btn-relance" onclick="addPoint('A', 'relance')">Point A - Relance sans R-P-A</button>
+            <button class="action-button btn-service" onclick="addPoint('A', 'service')">Point A - Au service</button>
+            <button class="action-button btn-faute" onclick="addPoint('A', 'fauteAdv')">Point A - Faute directe adverse</button>
+        </div>
+        <div class="score-col">
+            <h4>Points Équipe B (Cliquez pour marquer)</h4>
+            <button class="action-button btn-rpa-smash" onclick="addPoint('B', 'rpaSmash')">Point B - R-P-A (Smash)</button>
+            <button class="action-button btn-rpa-place" onclick="addPoint('B', 'rpaPlace')">Point B - R-P-A (Balle placée)</button>
+            <button class="action-button btn-relance" onclick="addPoint('B', 'relance')">Point B - Relance sans R-P-A</button>
+            <button class="action-button btn-service" onclick="addPoint('B', 'service')">Point B - Au service</button>
+            <button class="action-button btn-faute" onclick="addPoint('B', 'fauteAdv')">Point B - Faute directe adverse</button>
+        </div>
+    </div>
+
+    <div id="simple-counter" style="display: none;" class="no-print">
+        <div class="score-col">
+            <h4>Compteur Simple Équipe A</h4>
+            <button class="action-button btn-simple-score" onclick="addPointSimple('A')">+ 1 Point A</button>
+        </div>
+        <div class="score-col">
+            <h4>Compteur Simple Équipe B</h4>
+            <button class="action-button btn-simple-score" onclick="addPointSimple('B')">+ 1 Point B</button>
+        </div>
+    </div>
+
+
+    <div id="stats-section">
+        <h2>📊 Statistiques Détaillées</h2>
+
+        <h3>Détails des Points Marqués par Phase (Score 0-7, 8-15, 16-25)</h3>
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Équipe / Composition (Score)</th>
+                    <th>R-P-A (Smash)</th>
+                    <th>R-P-A (Balle Pl.)</th>
+                    <th>Relance sans R-P-A</th>
+                    <th>Au Service</th>
+                    <th>Faute Adv.</th>
+                    <th>Total Points</th>
+                </tr>
+            </thead>
+            <tbody id="stats-table-body">
+                </tbody>
+        </table>
+
+        <div id="feedback-section" style="margin-top: 30px;">
+            <h2>✨ Degré de Maîtrise de l'Attaque (R-P-A) par Composition</h2>
+            
+            <table id="legend-table" class="stats-table" style="width: 80%; margin: 15px auto;">
+                <thead>
+                    <tr>
+                        <td class="legend-header">Degré de Maîtrise</td>
+                        <td class="insuffisante">Insuffisante</td>
+                        <td class="fragile">Fragile</td>
+                        <td class="satisfaisante">Satisfaisante</td>
+                        <td class="tres-satisfaisante">Très satisfaisante</td>
+                    </tr>
+                    <tr>
+                        <td class="legend-header">Ratio</td>
+                        <td class="insuffisante ratio-cell">&lt;10%</td>
+                        <td class="fragile ratio-cell">10% à 20%</td>
+                        <td class="satisfaisante ratio-cell">20% à 30%</td>
+                        <td class="tres-satisfaisante ratio-cell">&gt;30%</td>
+                    </tr>
+                </thead>
+            </table>
+            
+            <table id="feedback-table" class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Équipe / Composition</th>
+                        <th>Points Attaque (Smash + Placé)</th>
+                        <th>Total Points Marqués</th>
+                        <th>Ratio (Attaque / Total Points)</th>
+                        <th>Niveau de Maîtrise</th>
+                    </tr>
+                </thead>
+                <tbody id="efficiency-table-body">
+                    </tbody>
+            </table>
+            
+            <p style="margin-top: 15px; font-size: 0.9em; color: #666;">
+                *Le ratio est calculé par composition d'équipe uniquement si des points ont été marqués durant cette phase.
+            </p>
+        </div>
+        
+        <p class="print-button-container" style="text-align: center; margin-top: 20px;">
+            <button class="action-button btn-service" onclick="window.print()" style="width: 40%;">📄 Exporter en PDF / Imprimer les résultats</button>
+        </p>
+
+    </div>
+
+    <script>
+        const initialStats = () => ({ rpaSmash: 0, rpaPlace: 0, relance: 0, service: 0, fauteAdv: 0 });
+
+        // Définition de l'état global du jeu
+        let gameState = {
+            score: { A: 0, B: 0 },
+            servingTeam: null, 
+            teams: {
+                A: { N1: [], N2: [], N3: [], currentPlayers: [], rotationIndex: 0, formation: 'carre' },
+                B: { N1: [], N2: [], N3: [], currentPlayers: [], rotationIndex: 0, formation: 'carre' }
+            },
+            mode: 'stats', 
+            statsHistory: {
+                A: [initialStats(), initialStats(), initialStats()], 
+                B: [initialStats(), initialStats(), initialStats()]
+            },
+            currentPhaseIndex: 0 
+        };
+        
+        // Les labels pour les phases 
+        const phaseLabels = [
+            'Phase 1 (N3+N2, Score 0-7)', 
+            'Phase 2 (N3+N1, Score 8-15)', 
+            'Phase 3 (N2+N1, Score 16-25)'
+        ];
+
+        // --- Fonctions de Configuration et d'État ---
+
+        function updateTeams() {
+            const getNames = (team, level) => [
+                document.getElementById(`${team.toLowerCase()}-${level.toLowerCase()}-1`).value.trim(),
+                document.getElementById(`${team.toLowerCase()}-${level.toLowerCase()}-2`).value.trim()
+            ].filter(name => name !== '');
+
+            gameState.teams.A.N3 = getNames('A', 'N3');
+            gameState.teams.A.N2 = getNames('A', 'N2');
+            gameState.teams.A.N1 = getNames('A', 'N1');
+            gameState.teams.B.N3 = getNames('B', 'N3');
+            gameState.teams.B.N2 = getNames('B', 'N2');
+            gameState.teams.B.N1 = getNames('B', 'N1');
+
+            updateCurrentPlayers();
+        }
+
+        function getPhaseIndex(score) {
+            if (score < 8) return 0;
+            if (score < 16) return 1;
+            return 2;
+        }
+
+        function getPhasePlayers(teamId, phaseIndex) {
+            let team = gameState.teams[teamId];
+            let players;
+
+            if (phaseIndex === 0) { // 0-7: N3 + N2
+                players = [...team.N3.slice(0, 2), ...team.N2.slice(0, 2)];
+            } else if (phaseIndex === 1) { // 8-15: N3 + N1
+                players = [...team.N3.slice(0, 2), ...team.N1.slice(0, 2)];
+            } else { // 16-25: N2 + N1
+                players = [...team.N2.slice(0, 2), ...team.N1.slice(0, 2)];
+            }
+
+            while (players.length < 4) {
+                players.push(`${teamId}_J${players.length + 1}`);
+            }
+            return players.slice(0, 4);
+        }
+
+        function getPlayerLevel(teamId, playerName) {
+            const team = gameState.teams[teamId];
+            if (team.N1.includes(playerName)) return 'N1';
+            if (team.N2.includes(playerName)) return 'N2';
+            if (team.N3.includes(playerName)) return 'N3';
+            return ''; 
+        }
+
+        function updateCurrentPlayers() {
+            const maxScore = Math.max(gameState.score.A, gameState.score.B);
+            const newPhaseIndex = getPhaseIndex(maxScore);
+            
+            gameState.currentPhaseIndex = newPhaseIndex; 
+
+            const playersA = getPhasePlayers('A', newPhaseIndex);
+            const playersB = getPhasePlayers('B', newPhaseIndex);
+
+            gameState.teams.A.currentPlayers = playersA;
+            gameState.teams.B.currentPlayers = playersB;
+            
+            const renderPlayerList = (players, teamId) => players.map((name) => {
+                const level = getPlayerLevel(teamId, name);
+                return `<li class="level-${level.toUpperCase()}">${name}</li>`;
+            }).join('');
+
+            document.getElementById('current-players-A').innerHTML = `<ul class="current-player-list">${renderPlayerList(playersA, 'A')}</ul>`;
+            document.getElementById('current-players-B').innerHTML = `<ul class="current-player-list">${renderPlayerList(playersB, 'B')}</ul>`;
+
+            updateCourtDisplay(); 
+            updateStatsTable();
+            checkEndOfMatch();
+        }
+
+        function setFormation(teamId, formation) {
+            gameState.teams[teamId].formation = formation;
+            
+            document.getElementById(`btn-formation-carre-${teamId}`).classList.remove('active');
+            document.getElementById(`btn-formation-losange-${teamId}`).classList.remove('active');
+            document.getElementById(`btn-formation-${formation}-${teamId}`).classList.add('active');
+            
+            gameState.teams[teamId].rotationIndex = 0;
+            
+            updateCourtDisplay();
+        }
+
+        function renderCourt(teamId) {
+            const teamData = gameState.teams[teamId];
+            const isServing = gameState.servingTeam === teamId;
+            const players = teamData.currentPlayers;
+            const rotationIndex = teamData.rotationIndex % players.length; 
+            const formation = teamData.formation;
+            
+            if (players.length === 0) {
+                 return `<div class="team-court-container"><div class="serving-indicator">Équipe ${teamId}</div><p>Veuillez configurer l'équipe ${teamId}.</p></div>`;
+            }
+            
+            let positionsInUse = (formation === 'carre') ? [1, 5, 4, 2] : [6, 4, 3, 2];
+            let playerMap = {}; 
+
+            for (let i = 0; i < players.length; i++) {
+                const playerIndex = (rotationIndex + i) % players.length;
+                const player = players[playerIndex];
+                const position = positionsInUse[i];
+                
+                playerMap[position] = { 
+                    name: player, 
+                    level: getPlayerLevel(teamId, player),
+                    isServer: isServing && (
+                        (formation === 'carre' && position === 1) ||
+                        (formation === 'losange' && position === 6)
+                    )
+                };
+            }
+
+            // Note: Les boutons de formation sont là, mais seront cachés par @media print
+            const formationSelectorHtml = `
+                <div class="formation-selector-team no-print">
+                    <p style="font-weight: bold; margin-bottom: 5px;">Formation :</p>
+                    <button id="btn-formation-carre-${teamId}" class="formation-button mode-button ${formation === 'carre' ? 'active' : ''}" onclick="setFormation('${teamId}', 'carre')">Carré (P1, P2, P4, P5)</button>
+                    <button id="btn-formation-losange-${teamId}" class="formation-button mode-button ${formation === 'losange' ? 'active' : ''}" onclick="setFormation('${teamId}', 'losange')">Losange (P2, P3, P4, P6)</button>
+                </div>
+            `;
+
+            const getPosContent = (posNumber) => {
+                const posData = playerMap[posNumber];
+                if (posData) {
+                    const serverClass = posData.isServer ? 'player-service' : '';
+                    const levelClass = `level-${posData.level.toUpperCase()}`;
+                    return `<span class="player-label ${levelClass} ${serverClass}">${posData.name}<br>(P${posNumber}) ${posData.isServer ? '🏐' : ''}</span>`;
+                } else {
+                    return `<span class="player-label" style="background: none; color: #777;">(P${posNumber})</span>`;
+                }
+            };
+
+            const diagram = `
+                <div class="court-diagram">
+                    <div class="court-position" style="grid-area: 1 / 1 / 2 / 2;">${getPosContent(4)}</div>
+                    <div class="court-position" style="grid-area: 1 / 2 / 2 / 3;">${getPosContent(3)}</div>
+                    <div class="court-position" style="grid-area: 1 / 3 / 2 / 4;">${getPosContent(2)}</div>
+                    <div class="court-position" style="grid-area: 2 / 1 / 3 / 2;">${getPosContent(5)}</div>
+                    <div class="court-position" style="grid-area: 2 / 2 / 3 / 3;">${getPosContent(6)}</div>
+                    <div class="court-position" style="grid-area: 2 / 3 / 3 / 4;">${getPosContent(1)}</div>
+                </div>
+            `;
+            
+            const servingStatus = gameState.servingTeam === null ? '(En attente du service initial)' : (isServing ? '🏐 AU SERVICE' : '(RÉCEPTION)');
+            const servingClass = isServing ? 'is-serving' : '';
+
+            return `
+                <div class="team-court-container">
+                    ${formationSelectorHtml}
+                    <div class="serving-indicator ${servingClass}">Équipe ${teamId} ${servingStatus}</div>
+                    ${diagram}
+                </div>
+            `;
+        }
+
+        function updateCourtDisplay() {
+            const courtA = renderCourt('A');
+            const courtB = renderCourt('B');
+            document.getElementById('court-display').innerHTML = courtA + courtB;
+        }
+
+
+        // --- Fonctions de Score et de Stats ---
+
+        function setMode(mode) {
+            gameState.mode = mode;
+            const isStatsMode = (mode === 'stats');
+            
+            document.getElementById('score-buttons').style.display = (isStatsMode ? 'flex' : 'none');
+            document.getElementById('simple-counter').style.display = (isStatsMode ? 'none' : 'flex');
+            
+            document.getElementById('btn-mode-stats').classList.toggle('active', isStatsMode);
+            document.getElementById('btn-mode-simple').classList.toggle('active', !isStatsMode);
+            
+            document.getElementById('stats-section').style.display = isStatsMode ? 'block' : 'none'; 
+            
+            updateStatsTable(); 
+        }
+
+        function addPoint(winningTeam, pointType) {
+            if (gameState.score.A === 0 && gameState.score.B === 0 && !gameState.servingTeam) {
+                gameState.servingTeam = winningTeam;
+            }
+            
+            gameState.score[winningTeam]++;
+            
+            const currentPhaseStats = gameState.statsHistory[winningTeam][gameState.currentPhaseIndex];
+            currentPhaseStats[pointType]++;
+
+            if (gameState.servingTeam !== winningTeam) {
+                gameState.servingTeam = winningTeam;
+                gameState.teams[winningTeam].rotationIndex++;
+            }
+            
+            document.getElementById(`score-${winningTeam}`).textContent = gameState.score[winningTeam];
+            updateCurrentPlayers();
+        }
+
+        function addPointSimple(winningTeam) {
+            if (gameState.score.A === 0 && gameState.score.B === 0 && !gameState.servingTeam) {
+                gameState.servingTeam = winningTeam;
+            }
+            
+            gameState.score[winningTeam]++;
+
+            if (gameState.servingTeam !== winningTeam) {
+                gameState.servingTeam = winningTeam;
+                gameState.teams[winningTeam].rotationIndex++;
+            }
+            
+            document.getElementById(`score-${winningTeam}`).textContent = gameState.score[winningTeam];
+            updateCurrentPlayers();
+        }
+
+        function calculateEfficiency(teamStats) {
+            const pointsAttaque = teamStats.rpaSmash + teamStats.rpaPlace;
+            const totalPoints = teamStats.rpaSmash + teamStats.rpaPlace + teamStats.relance + teamStats.service + teamStats.fauteAdv;
+
+            if (totalPoints === 0) {
+                return { ratio: 'N/A', feedbackText: 'N/A', cssClass: ''};
+            }
+
+            const ratioPercentage = (pointsAttaque / totalPoints) * 100;
+            const ratioDisplay = ratioPercentage.toFixed(1) + '%';
+            
+            let feedbackText = '';
+            let cssClass = '';
+
+            if (ratioPercentage > 30) {
+                feedbackText = 'Très Satisfaisante'; cssClass = 'tres-satisfaisante';
+            } else if (ratioPercentage >= 20) {
+                feedbackText = 'Satisfaisante'; cssClass = 'satisfaisante';
+            } else if (ratioPercentage >= 10) {
+                feedbackText = 'Fragile'; cssClass = 'fragile';
+            } else {
+                feedbackText = 'Insuffisante'; cssClass = 'insuffisante';
+            }
+
+            return { ratio: ratioDisplay, feedbackText: feedbackText, cssClass: cssClass, pointsAttaque: pointsAttaque, totalPoints: totalPoints };
+        }
+        
+        function updateStatsTable() {
+            const teams = ['A', 'B'];
+            let statsHtml = '';
+            let efficiencyHtml = '';
+            
+            const totalStats = { A: initialStats(), B: initialStats() };
+
+            teams.forEach(teamId => {
+                statsHtml += `<tr><td colspan="7" class="phase-header">Équipe ${teamId}</td></tr>`;
+                efficiencyHtml += `<tr><td colspan="5" class="phase-header">Équipe ${teamId}</td></tr>`;
+
+                // 1. Statistiques par Phase
+                gameState.statsHistory[teamId].forEach((phaseStats, index) => {
+                    const totalPhasePoints = phaseStats.rpaSmash + phaseStats.rpaPlace + phaseStats.relance + phaseStats.service + phaseStats.fauteAdv;
+                    const efficiency = calculateEfficiency(phaseStats);
+
+                    // Cumuler pour le total
+                    totalStats[teamId].rpaSmash += phaseStats.rpaSmash;
+                    totalStats[teamId].rpaPlace += phaseStats.rpaPlace;
+                    totalStats[teamId].relance += phaseStats.relance;
+                    totalStats[teamId].service += phaseStats.service;
+                    totalStats[teamId].fauteAdv += phaseStats.fauteAdv;
+
+                    // Ligne pour les stats détaillées (Tableau 1)
+                    statsHtml += `
+                        <tr class="${index === gameState.currentPhaseIndex ? 'current-phase' : ''}">
+                            <td>${phaseLabels[index]}</td>
+                            <td>${phaseStats.rpaSmash}</td>
+                            <td>${phaseStats.rpaPlace}</td>
+                            <td>${phaseStats.relance}</td>
+                            <td>${phaseStats.service}</td>
+                            <td>${phaseStats.fauteAdv}</td>
+                            <td>${totalPhasePoints}</td>
+                        </tr>
+                    `;
+
+                    // Ligne pour l'efficacité (Tableau 2)
+                    efficiencyHtml += `
+                        <tr class="${index === gameState.currentPhaseIndex ? 'current-phase' : ''}">
+                            <td>${phaseLabels[index]}</td>
+                            <td>${efficiency.pointsAttaque}</td>
+                            <td>${efficiency.totalPoints === 0 ? 'N/A' : efficiency.totalPoints}</td>
+                            <td class="ratio-cell">${efficiency.ratio}</td>
+                            <td class="ratio-cell ${efficiency.cssClass}">${efficiency.feedbackText}</td>
+                        </tr>
+                    `;
+                });
+
+                // 2. Ligne de Total (Toutes Phases Confondues)
+                const totalEff = calculateEfficiency(totalStats[teamId]);
+                const totalPoints = totalStats[teamId].rpaSmash + totalStats[teamId].rpaPlace + totalStats[teamId].relance + totalStats[teamId].service + totalStats[teamId].fauteAdv;
+
+                // Ligne de Total (Tableau 1)
+                statsHtml += `
+                    <tr class="total-row">
+                        <td>Total Équipe ${teamId}</td>
+                        <td>${totalStats[teamId].rpaSmash}</td>
+                        <td>${totalStats[teamId].rpaPlace}</td>
+                        <td>${totalStats[teamId].relance}</td>
+                        <td>${totalStats[teamId].service}</td>
+                        <td>${totalStats[teamId].fauteAdv}</td>
+                        <td>${totalPoints}</td>
+                    </tr>
+                `;
+
+                // Ligne de Total (Tableau 2)
+                efficiencyHtml += `
+                    <tr class="total-row">
+                        <td>Total Équipe ${teamId}</td>
+                        <td>${totalEff.pointsAttaque}</td>
+                        <td>${totalEff.totalPoints === 0 ? 'N/A' : totalEff.totalPoints}</td>
+                        <td class="ratio-cell">${totalEff.ratio}</td>
+                        <td class="ratio-cell ${totalEff.cssClass}">${totalEff.feedbackText}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stats-table-body').innerHTML = statsHtml;
+            document.getElementById('efficiency-table-body').innerHTML = efficiencyHtml;
+        }
+
+        function checkEndOfMatch() {
+            const scoreA = gameState.score.A;
+            const scoreB = gameState.score.B;
+            const endScore = 25; 
+            
+            const matchEnded = (scoreA >= endScore || scoreB >= endScore);
+            
+            if (matchEnded) {
+                const winner = scoreA > scoreB ? 'A' : 'B';
+                setTimeout(() => {
+                    alert(`FIN DU MATCH ! L'équipe ${winner} a gagné avec un score de ${scoreA} - ${scoreB}.`);
+                }, 100); 
+            }
+        }
+
+        function resetGame() {
+            gameState.score = { A: 0, B: 0 };
+            gameState.servingTeam = null;
+            gameState.teams.A.rotationIndex = 0;
+            gameState.teams.B.rotationIndex = 0;
+            
+            gameState.statsHistory = {
+                A: [initialStats(), initialStats(), initialStats()], 
+                B: [initialStats(), initialStats(), initialStats()]
+            };
+            gameState.currentPhaseIndex = 0;
+
+            document.getElementById('score-A').textContent = '0';
+            document.getElementById('score-B').textContent = '0';
+            
+            updateTeams(); 
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateTeams(); 
+            setMode('stats'); 
+            setFormation('A', 'carre'); 
+            setFormation('B', 'carre'); 
+        });
+    </script>
+
+</body>
+</html>
