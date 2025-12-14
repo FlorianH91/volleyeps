@@ -32,9 +32,16 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             margin-bottom: 20px;
         }
+        
+        /* Conteneur du mode */
+        #mode-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
 
         /* Boutons de sélection */
-        .mode-button {
+        .mode-buttons-container button {
             padding: 10px 15px;
             margin: 5px;
             cursor: pointer;
@@ -46,11 +53,29 @@
             color: #333;
         }
         
-        .mode-button.active, .formation-button.active {
+        .mode-buttons-container button.active, .formation-button.active {
             background-color: #007bff;
             color: white;
             border-color: #007bff;
             box-shadow: 0 2px 5px rgba(0, 123, 255, 0.5);
+        }
+        
+        /* Style pour l'option de contrainte */
+        .contrainte-option {
+            padding: 10px;
+            border: 1px solid #007bff;
+            border-radius: 5px;
+            background-color: #e6f2ff;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .contrainte-option label {
+            font-weight: bold;
+            color: #004d99;
+            margin-left: 10px;
+            cursor: pointer;
         }
 
         /* Configuration des Équipes */
@@ -60,7 +85,12 @@
             margin-top: 15px;
         }
         
-        /* Score Display (Centrage corrigé) */
+        /* NOUVEAU CONTENEUR POUR LE SCORE ET LES BOUTONS */
+        #score-controls {
+            margin-bottom: 20px;
+        }
+        
+        /* Score Display */
         #match-display {
             display: flex;
             justify-content: space-between;
@@ -69,9 +99,10 @@
             color: white;
             padding: 20px;
             border-radius: 8px;
-            margin-bottom: 20px;
+            /* Suppression de la marge du bas car il y aura les boutons juste en dessous */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             height: 150px; 
+            margin-bottom: 15px; /* Petit espace avant les boutons */
         }
         
         .team-info {
@@ -132,6 +163,7 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            /* Suppression de la marge du haut pour coller au score */
         }
         .action-button {
             display: block;
@@ -142,8 +174,13 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, opacity 0.3s;
             text-align: left;
+        }
+        
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .btn-rpa-smash { background-color: #28a745; color: white; } 
@@ -152,6 +189,14 @@
         .btn-service { background-color: #007bff; color: white; }
         .btn-faute { background-color: #dc3545; color: white; }
         .btn-simple-score { background-color: #5cb85c; color: white; font-size: 1.2em; }
+        .btn-simple-score:disabled { background-color: #9cd69c; color: #555; }
+
+        /* Conteneurs de Boutons Flex */
+        #score-buttons, #simple-counter {
+            display: flex;
+            justify-content: space-between;
+        }
+
 
         /* --- Styles des Terrains --- */
         #court-display {
@@ -253,22 +298,26 @@
         @media print {
             /* 1. Optimisation de la taille et suppression des marges */
             body {
-                font-size: 80%; /* Réduire la taille globale pour tout faire tenir */
+                font-size: 80%; 
                 padding: 0;
             }
 
             /* 2. Cacher les éléments non pertinents pour le rapport */
             .no-print, 
             .action-button, 
-            #score-buttons, 
-            #simple-counter,
+            #score-controls, /* Cacher tout le bloc de contrôle de score */
             p.print-button-container { 
                 display: none !important;
+            }
+            
+            /* S'assurer que le score est affiché pour le rapport */
+            #match-display {
+                display: flex !important;
             }
 
             /* 3. Forcer un saut de page après la section Match/Rotation */
             #court-section {
-                page-break-after: always; /* Force la section Stats à aller sur la page suivante */
+                page-break-after: always; 
                 box-shadow: none; 
                 margin: 0;
                 padding: 10px; 
@@ -332,24 +381,68 @@
     </div>
 
     <div id="mode-selector" class="no-print">
-        <h2>🕹️ Mode de Jeu</h2>
-        <button id="btn-mode-stats" class="mode-button active" onclick="setMode('stats')">Mode AVEC Observation (Stats)</button>
-        <button id="btn-mode-simple" class="mode-button" onclick="setMode('simple')">Mode SANS Observation (Simple)</button>
+        <h2>🕹️ Mode de Jeu et Options</h2>
+        
+        <div class="mode-buttons-container">
+            <p style="font-weight: bold; margin-bottom: 5px;">Mode Principal :</p>
+            <button id="btn-mode-stats" class="mode-button active" onclick="setMode('stats')">Mode Observation (Stats)</button>
+            <button id="btn-mode-simple" class="mode-button" onclick="setMode('simple')">Mode Simple (Sans Stats)</button>
+        </div>
+        
+        <div class="contrainte-option">
+            <input type="checkbox" id="service-contrainte" onchange="checkServiceContrainte()">
+            <label for="service-contrainte">Activer la Contrainte de Service (Max 3 consécutifs : le 4ème point change de service)</label>
+        </div>
+    </div>
+    
+    <div id="score-controls" class="no-print">
+
+        <div id="match-display">
+            <div class="team-info">
+                <div class="team-name">Équipe A</div>
+                <div id="score-A">0</div>
+                <div id="current-players-A"></div>
+            </div>
+            <div class="separator">-</div>
+            <div class="team-info">
+                <div class="team-name">Équipe B</div>
+                <div id="score-B">0</div>
+                <div id="current-players-B"></div>
+            </div>
+        </div>
+
+        <div id="score-buttons" class="no-print">
+            <div class="score-col" id="col-A">
+                <h4>Points Équipe A (Cliquez pour marquer)</h4>
+                <button class="action-button btn-rpa-smash" data-team="A" data-original-text="Point A - R-P-A (Smash)" onclick="addPoint('A', 'rpaSmash')">Point A - R-P-A (Smash)</button>
+                <button class="action-button btn-rpa-place" data-team="A" data-original-text="Point A - R-P-A (Balle placée)" onclick="addPoint('A', 'rpaPlace')">Point A - R-P-A (Balle placée)</button>
+                <button class="action-button btn-relance" data-team="A" data-original-text="Point A - Relance sans R-P-A" onclick="addPoint('A', 'relance')">Point A - Relance sans R-P-A</button>
+                <button class="action-button btn-service" data-team="A" data-original-text="Point A - Au service" onclick="addPoint('A', 'service')">Point A - Au service</button>
+                <button class="action-button btn-faute" data-team="A" data-original-text="Point A - Faute directe adverse" onclick="addPoint('A', 'fauteAdv')">Point A - Faute directe adverse</button>
+            </div>
+            <div class="score-col" id="col-B">
+                <h4>Points Équipe B (Cliquez pour marquer)</h4>
+                <button class="action-button btn-rpa-smash" data-team="B" data-original-text="Point B - R-P-A (Smash)" onclick="addPoint('B', 'rpaSmash')">Point B - R-P-A (Smash)</button>
+                <button class="action-button btn-rpa-place" data-team="B" data-original-text="Point B - R-P-A (Balle placée)" onclick="addPoint('B', 'rpaPlace')">Point B - R-P-A (Balle placée)</button>
+                <button class="action-button btn-relance" data-team="B" data-original-text="Point B - Relance sans R-P-A" onclick="addPoint('B', 'relance')">Point B - Relance sans R-P-A</button>
+                <button class="action-button btn-service" data-team="B" data-original-text="Point B - Au service" onclick="addPoint('B', 'service')">Point B - Au service</button>
+                <button class="action-button btn-faute" data-team="B" data-original-text="Point B - Faute directe adverse" onclick="addPoint('B', 'fauteAdv')">Point B - Faute directe adverse</button>
+            </div>
+        </div>
+
+        <div id="simple-counter" style="display: none;" class="no-print">
+            <div class="score-col" id="simple-col-A">
+                <h4>Compteur Simple Équipe A</h4>
+                <button class="action-button btn-simple-score" data-team="A" data-original-text="+ 1 Point A" onclick="addPointSimple('A')">+ 1 Point A</button>
+            </div>
+            <div class="score-col" id="simple-col-B">
+                <h4>Compteur Simple Équipe B</h4>
+                <button class="action-button btn-simple-score" data-team="B" data-original-text="+ 1 Point B" onclick="addPointSimple('B')">+ 1 Point B</button>
+            </div>
+        </div>
     </div>
 
-    <div id="match-display">
-        <div class="team-info">
-            <div class="team-name">Équipe A</div>
-            <div id="score-A">0</div>
-            <div id="current-players-A"></div>
-        </div>
-        <div class="separator">-</div>
-        <div class="team-info">
-            <div class="team-name">Équipe B</div>
-            <div id="score-B">0</div>
-            <div id="current-players-B"></div>
-        </div>
-    </div>
+
     
     <div id="court-section">
         <h2>🔄 Rotation et Positions sur le Terrain (4v4)</h2>
@@ -357,36 +450,6 @@
             </div>
     </div>
     
-    <div id="score-buttons" class="no-print">
-        <div class="score-col">
-            <h4>Points Équipe A (Cliquez pour marquer)</h4>
-            <button class="action-button btn-rpa-smash" onclick="addPoint('A', 'rpaSmash')">Point A - R-P-A (Smash)</button>
-            <button class="action-button btn-rpa-place" onclick="addPoint('A', 'rpaPlace')">Point A - R-P-A (Balle placée)</button>
-            <button class="action-button btn-relance" onclick="addPoint('A', 'relance')">Point A - Relance sans R-P-A</button>
-            <button class="action-button btn-service" onclick="addPoint('A', 'service')">Point A - Au service</button>
-            <button class="action-button btn-faute" onclick="addPoint('A', 'fauteAdv')">Point A - Faute directe adverse</button>
-        </div>
-        <div class="score-col">
-            <h4>Points Équipe B (Cliquez pour marquer)</h4>
-            <button class="action-button btn-rpa-smash" onclick="addPoint('B', 'rpaSmash')">Point B - R-P-A (Smash)</button>
-            <button class="action-button btn-rpa-place" onclick="addPoint('B', 'rpaPlace')">Point B - R-P-A (Balle placée)</button>
-            <button class="action-button btn-relance" onclick="addPoint('B', 'relance')">Point B - Relance sans R-P-A</button>
-            <button class="action-button btn-service" onclick="addPoint('B', 'service')">Point B - Au service</button>
-            <button class="action-button btn-faute" onclick="addPoint('B', 'fauteAdv')">Point B - Faute directe adverse</button>
-        </div>
-    </div>
-
-    <div id="simple-counter" style="display: none;" class="no-print">
-        <div class="score-col">
-            <h4>Compteur Simple Équipe A</h4>
-            <button class="action-button btn-simple-score" onclick="addPointSimple('A')">+ 1 Point A</button>
-        </div>
-        <div class="score-col">
-            <h4>Compteur Simple Équipe B</h4>
-            <button class="action-button btn-simple-score" onclick="addPointSimple('B')">+ 1 Point B</button>
-        </div>
-    </div>
-
 
     <div id="stats-section">
         <h2>📊 Statistiques Détaillées</h2>
@@ -466,7 +529,8 @@
                 A: { N1: [], N2: [], N3: [], currentPlayers: [], rotationIndex: 0, formation: 'carre' },
                 B: { N1: [], N2: [], N3: [], currentPlayers: [], rotationIndex: 0, formation: 'carre' }
             },
-            mode: 'stats', 
+            mode: 'stats', // 'stats' (Observation) ou 'simple' (Sans Stats)
+            serviceCounter: { A: 0, B: 0 }, // Compteur de services consécutifs
             statsHistory: {
                 A: [initialStats(), initialStats(), initialStats()], 
                 B: [initialStats(), initialStats(), initialStats()]
@@ -563,6 +627,7 @@
             document.getElementById(`btn-formation-losange-${teamId}`).classList.remove('active');
             document.getElementById(`btn-formation-${formation}-${teamId}`).classList.add('active');
             
+            // Réinitialiser l'index lors du changement de formation
             gameState.teams[teamId].rotationIndex = 0;
             
             updateCourtDisplay();
@@ -572,7 +637,12 @@
             const teamData = gameState.teams[teamId];
             const isServing = gameState.servingTeam === teamId;
             const players = teamData.currentPlayers;
-            const rotationIndex = teamData.rotationIndex % players.length; 
+            
+            // Gestion de l'index normalisé (pour rotation horaire)
+            const rotationIndex = teamData.rotationIndex;
+            const arrayLength = players.length;
+            const normalizedIndex = (rotationIndex % arrayLength + arrayLength) % arrayLength; 
+            
             const formation = teamData.formation;
             
             if (players.length === 0) {
@@ -583,7 +653,7 @@
             let playerMap = {}; 
 
             for (let i = 0; i < players.length; i++) {
-                const playerIndex = (rotationIndex + i) % players.length;
+                const playerIndex = (normalizedIndex + i) % arrayLength;
                 const player = players[playerIndex];
                 const position = positionsInUse[i];
                 
@@ -597,7 +667,6 @@
                 };
             }
 
-            // Note: Les boutons de formation sont là, mais seront cachés par @media print
             const formationSelectorHtml = `
                 <div class="formation-selector-team no-print">
                     <p style="font-weight: bold; margin-bottom: 5px;">Formation :</p>
@@ -647,19 +716,26 @@
         }
 
 
-        // --- Fonctions de Score et de Stats ---
+        // --- Fonctions de Score, Stats et Contrainte ---
 
+        function checkServiceContrainte() {
+            return document.getElementById('service-contrainte').checked;
+        }
+        
         function setMode(mode) {
             gameState.mode = mode;
             const isStatsMode = (mode === 'stats');
             
-            document.getElementById('score-buttons').style.display = (isStatsMode ? 'flex' : 'none');
-            document.getElementById('simple-counter').style.display = (isStatsMode ? 'none' : 'flex');
+            // Affichage des sections
+            document.getElementById('stats-section').style.display = isStatsMode ? 'block' : 'none'; 
             
+            // Affichage des compteurs (Les modes stats et simple ont leurs propres colonnes)
+            document.getElementById('score-buttons').style.display = isStatsMode ? 'flex' : 'none';
+            document.getElementById('simple-counter').style.display = !isStatsMode ? 'flex' : 'none';
+            
+            // Activation des boutons de mode
             document.getElementById('btn-mode-stats').classList.toggle('active', isStatsMode);
             document.getElementById('btn-mode-simple').classList.toggle('active', !isStatsMode);
-            
-            document.getElementById('stats-section').style.display = isStatsMode ? 'block' : 'none'; 
             
             updateStatsTable(); 
         }
@@ -669,14 +745,38 @@
                 gameState.servingTeam = winningTeam;
             }
             
-            gameState.score[winningTeam]++;
+            const losingTeam = winningTeam === 'A' ? 'B' : 'A';
+            const contrainteActive = checkServiceContrainte();
             
+            // 1. ATTRIBUTION DU POINT (TOUJOURS)
+            gameState.score[winningTeam]++;
             const currentPhaseStats = gameState.statsHistory[winningTeam][gameState.currentPhaseIndex];
             currentPhaseStats[pointType]++;
 
+
             if (gameState.servingTeam !== winningTeam) {
+                // Changement de service normal (break ou faute de l'équipe au service)
                 gameState.servingTeam = winningTeam;
-                gameState.teams[winningTeam].rotationIndex++;
+                gameState.teams[winningTeam].rotationIndex--; 
+                gameState.serviceCounter[winningTeam] = 1; 
+                gameState.serviceCounter[losingTeam] = 0;
+            } else {
+                // Même équipe qui sert et marque (potentielle contrainte)
+                gameState.serviceCounter[winningTeam]++;
+                
+                if (contrainteActive && gameState.serviceCounter[winningTeam] > 3) { 
+                    // 2. ACTION DE LA CONTRAINTE : FORCER LA PERTE DE SERVICE 
+                    
+                    // Le point est acquis, mais on force le service à passer à l'autre équipe
+                    gameState.servingTeam = losingTeam;
+                    gameState.teams[losingTeam].rotationIndex--; 
+                    
+                    // Réinitialiser les compteurs : 
+                    // Le nouveau serveur a 1 point (le break) et l'ancien serveur est à 0.
+                    gameState.serviceCounter[losingTeam] = 1; 
+                    gameState.serviceCounter[winningTeam] = 0; 
+                }
+                // Si la contrainte n'est pas active ou non atteinte, le service reste
             }
             
             document.getElementById(`score-${winningTeam}`).textContent = gameState.score[winningTeam];
@@ -688,11 +788,33 @@
                 gameState.servingTeam = winningTeam;
             }
             
+            const losingTeam = winningTeam === 'A' ? 'B' : 'A';
+            const contrainteActive = checkServiceContrainte();
+
+            // 1. ATTRIBUTION DU POINT (TOUJOURS)
             gameState.score[winningTeam]++;
 
             if (gameState.servingTeam !== winningTeam) {
+                // Changement de service normal (break)
                 gameState.servingTeam = winningTeam;
-                gameState.teams[winningTeam].rotationIndex++;
+                gameState.teams[winningTeam].rotationIndex--;
+                gameState.serviceCounter[winningTeam] = 1; 
+                gameState.serviceCounter[losingTeam] = 0;
+            } else {
+                // Même équipe qui sert et marque (potentielle contrainte)
+                gameState.serviceCounter[winningTeam]++;
+                
+                if (contrainteActive && gameState.serviceCounter[winningTeam] > 3) {
+                    // 2. ACTION DE LA CONTRAINTE : FORCER LA PERTE DE SERVICE
+                    
+                    // Le point est acquis, mais on force le service à passer à l'autre équipe
+                    gameState.servingTeam = losingTeam;
+                    gameState.teams[losingTeam].rotationIndex--;
+                    
+                    // Réinitialiser les compteurs : 
+                    gameState.serviceCounter[losingTeam] = 1; 
+                    gameState.serviceCounter[winningTeam] = 0;
+                }
             }
             
             document.getElementById(`score-${winningTeam}`).textContent = gameState.score[winningTeam];
@@ -828,6 +950,8 @@
             gameState.teams.A.rotationIndex = 0;
             gameState.teams.B.rotationIndex = 0;
             
+            gameState.serviceCounter = { A: 0, B: 0 }; // Réinitialisation
+            
             gameState.statsHistory = {
                 A: [initialStats(), initialStats(), initialStats()], 
                 B: [initialStats(), initialStats(), initialStats()]
@@ -841,8 +965,15 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+             // Initialisation et configuration
+            document.querySelectorAll('#score-buttons .action-button, #simple-counter .action-button').forEach(button => {
+                if (!button.dataset.originalText) {
+                    button.dataset.originalText = button.textContent;
+                }
+            });
+
             updateTeams(); 
-            setMode('stats'); 
+            setMode('stats'); // Mode par défaut : Observation
             setFormation('A', 'carre'); 
             setFormation('B', 'carre'); 
         });
